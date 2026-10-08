@@ -1,24 +1,27 @@
 # KEF LS50 Wireless for Home Assistant
 
-Eine lokale, datensparsame Home-Assistant-Custom-Integration für KEF LS50 Wireless Lautsprecher. Das Projekt verwendet die lokale UPnP/SOAP-Schnittstelle des Lautsprechers und benötigt kein KEF-Konto, keinen Cloud-Token und keine externe Internetverbindung.
+Eine lokale, datensparsame Home-Assistant-Custom-Integration für KEF LS50 Wireless Lautsprecher. Das Projekt verwendet die lokalen UPnP/SOAP- und KEF-TCP-Schnittstellen des Lautsprechers und benötigt kein KEF-Konto, keinen Cloud-Token und keine externe Internetverbindung.
 
-> Status: erste funktionsfähige lokale Steuerung für Lautstärke, Mute und UPnP-Transportbefehle.
+**Status:** lokale Steuerung für Lautstärke, Mute, Quellenwahl und Play/Pause verfügbar.
 
 ## Funktionen
 
-| Funktion | Status | Lokaler UPnP-Dienst |
+| Funktion | Status | Lokaler Dienst / Protokoll |
 | --- | --- | --- |
 | Einrichtung per Hostname/IP | verfügbar | Config Flow |
+| Automatische Lautsprechersuche | verfügbar | SSDP/UPnP-Erkennung für KEF SP3903 |
 | Verfügbarkeit und Polling | verfügbar | `DataUpdateCoordinator` |
 | Lautstärke lesen/setzen | verfügbar | `RenderingControl:GetVolume` / `SetVolume` |
 | Mute lesen/setzen | verfügbar | `RenderingControl:GetMute` / `SetMute` |
-| Play/Pause/Stop | verfügbar | `AVTransport:Play` / `Pause` / `Stop` |
+| Play/Pause | verfügbar | KEF TCP-Frame `53 31 81 81` |
+| Stopp | verfügbar | `AVTransport:Stop` |
 | Transportstatus | verfügbar | `AVTransport:GetTransportInfo` |
-| Quellen wechseln | geplant | noch nicht verifiziert |
+| Quellen wechseln | verfügbar | KEF TCP über `aiokef` |
+| Aktive Quelle anzeigen | verfügbar | KEF TCP über `aiokef` |
 | KEF-Soundprofile | geplant | noch nicht verifiziert |
 | UPnP-Presets | geplant | `ListPresets` / `SelectPreset`, Semantik offen |
 
-Die Lautstärke wird vom Gerät als ganzzahliger Bereich 0 bis 100 geliefert und in Home Assistant als 0.0 bis 1.0 dargestellt.
+Die auswählbaren Quellen sind **WiFi**, **Bluetooth**, **AUX**, **Optical** und **USB**. Die Lautstärke wird vom Gerät als ganzzahliger Bereich 0 bis 100 geliefert und in Home Assistant als 0.0 bis 1.0 dargestellt.
 
 ## Installation
 
@@ -27,33 +30,19 @@ Die Lautstärke wird vom Gerät als ganzzahliger Bereich 0 bis 100 geliefert und
 3. Home Assistant neu starten.
 4. Zu **Einstellungen → Geräte & Dienste → Integration hinzufügen** gehen.
 5. Nach **KEF LS50 Wireless** suchen.
-6. Hostname oder IP-Adresse des eigenen Lautsprechers eingeben; der Standardport ist `8080`.
+6. Einen automatisch via SSDP gefundenen Lautsprecher bestätigen oder Hostname/IP manuell eingeben.
 
-## Lokale Architektur
+## Bedienung
 
-Das Gerät stellt sich als UPnP MediaRenderer bereit. Die Implementierung verwendet ausschließlich lokale HTTP/SOAP-Endpunkte:
+Nach der Einrichtung steht ein `media_player` für den Lautsprecher zur Verfügung. Über Home Assistant kannst du Lautstärke und Mute steuern, eine Quelle auswählen und Play/Pause auslösen.
 
-```text
-/description.xml
-/RenderingControl/ctrl
-/AVTransport/ctrl
-```
+Die Quellenwahl berechnet die korrekten KEF-TCP-Codes anhand der Standby-Zeit und Lautsprecherorientierung. Play/Pause nutzt einen Toggle-Befehl; je nach aktiver Quelle kann der UPnP-Transportstatus den tatsächlichen Wiedergabezustand nicht immer zuverlässig widerspiegeln.
 
-Die verwendeten Services sind `RenderingControl:1` und `AVTransport:1`, jeweils mit `InstanceID` `0` und dem Kanal `Master` für Lautstärke/Mute.
+## Entwicklung
 
-## Debug-Logging
+Die Integration nutzt nur lokale Gerätezugriffe:
 
-```yaml
-logger:
-  default: info
-  logs:
-    custom_components.kef_ls50_wireless: debug
-```
+- UPnP/SOAP auf Port 8080 für Lautstärke, Mute und Transportstatus.
+- KEF TCP auf Port 50001 für Quellenwahl und Play/Pause.
 
-## Sicherheit
-
-Keine Mitschnitte, Zugangsdaten, Cookies, Tokens, privaten IP-Adressen, MAC-Adressen, Seriennummern oder Webhooks committen. `*.mitm`, `*.har`, `*.pcap*`, `.env`, `secrets.yaml` und `.storage` werden durch `.gitignore` ausgeschlossen.
-
-## Lizenz
-
-MIT. KEF und LS50 Wireless sind Marken ihrer jeweiligen Inhaber. Dieses Projekt ist nicht mit KEF verbunden oder von KEF unterstützt.
+Die getesteten KEF-TCP-Befehle wurden mit einer LS50 Wireless erfolgreich verifiziert.
