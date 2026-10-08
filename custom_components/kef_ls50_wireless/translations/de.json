@@ -1,0 +1,15 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "host": "Hostname oder IP-Adresse",
+          "port": "Port"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Dieses KEF-LS50-Wireless-Gerät ist bereits konfiguriert."
+    }
+  }
+}
