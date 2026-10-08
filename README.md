@@ -1,47 +1,45 @@
 # KEF LS50 Wireless for Home Assistant
 
-Eine lokale, datensparsame Home-Assistant-Custom-Integration für KEF LS50 Wireless Lautsprecher. Das Projekt ist als offenes Community-Projekt ausgelegt und enthält weder persönliche Daten noch Cloud-Zugangsdaten, Tokens, IP-Adressen oder Netzwerkmitschnitte.
+Eine lokale, datensparsame Home-Assistant-Custom-Integration für KEF LS50 Wireless Lautsprecher. Das Projekt verwendet die lokale UPnP/SOAP-Schnittstelle des Lautsprechers und benötigt kein KEF-Konto, keinen Cloud-Token und keine externe Internetverbindung.
 
-> Status: frühes Entwicklungsgerüst. Der Config Flow, der Coordinator und die Entity-Struktur sind vorhanden. Die tatsächliche lokale Steuerungs-API wird erst anhand bereinigter, reproduzierbarer Requests implementiert.
+> Status: erste funktionsfähige lokale Steuerung für Lautstärke, Mute und UPnP-Transportbefehle.
 
-## Ziele
+## Funktionen
 
-- Lokale Kommunikation mit dem Lautsprecher, ohne verpflichtende Cloud-Anbindung
-- Unterstützung für mehrere LS50-Wireless-Geräte
-- Status, Lautstärke, Mute, Quelle und Sound-Profile
-- Dynamische Quellen und Profile: Die Integration übernimmt nur Werte, die ein Gerät tatsächlich meldet
-- Kein Tracking und keine Übertragung von Telemetrie an Dritte
-
-## Gefundene lokale Schnittstelle
-
-Der Mitschnitt enthält eine Gerätebeschreibung des LS50 Wireless als UPnP MediaRenderer. Erkennbar sind Port `8080` sowie die Standarddienste `RenderingControl`, `ConnectionManager` und `AVTransport`. Die bereinigte Dokumentation steht in [`docs/protocol.md`](docs/protocol.md). Keine gerätespezifischen Daten werden gespeichert.
-
-## Unterstützte Funktionen
-
-| Bereich | Status | Home-Assistant-Abbildung |
+| Funktion | Status | Lokaler UPnP-Dienst |
 | --- | --- | --- |
-| Einrichtung per Hostname/IP | vorbereitet | Config Flow |
-| Erreichbarkeit | vorbereitet | `media_player` availability |
-| Gerätestatus | vorbereitet | `DataUpdateCoordinator` |
-| Lautstärke | geplant | `media_player.volume_set` |
-| Stummschalten | geplant | `media_player.volume_mute` |
-| Quelle wechseln | geplant | `media_player.select_source` |
-| Sound-Profil | geplant | `select.kef_ls50_sound_profile` |
-| Wiedergabe/Standby | geplant | `media_player` |
+| Einrichtung per Hostname/IP | verfügbar | Config Flow |
+| Verfügbarkeit und Polling | verfügbar | `DataUpdateCoordinator` |
+| Lautstärke lesen/setzen | verfügbar | `RenderingControl:GetVolume` / `SetVolume` |
+| Mute lesen/setzen | verfügbar | `RenderingControl:GetMute` / `SetMute` |
+| Play/Pause/Stop | verfügbar | `AVTransport:Play` / `Pause` / `Stop` |
+| Transportstatus | verfügbar | `AVTransport:GetTransportInfo` |
+| Quellen wechseln | geplant | noch nicht verifiziert |
+| KEF-Soundprofile | geplant | noch nicht verifiziert |
+| UPnP-Presets | geplant | `ListPresets` / `SelectPreset`, Semantik offen |
 
-Die Begriffe und Werte für Quellen und Sound-Profile werden nicht fest in den Code geschrieben. Sie müssen vom Gerät bzw. der verifizierten API stammen.
-
-## Sicherheit
-
-Keine Mitschnitte, Zugangsdaten, Cookies, Tokens, privaten IP-Adressen, MAC-Adressen, Seriennummern oder Webhooks committen. `*.mitm`, `*.har`, `*.pcap*`, `.env`, `secrets.yaml` und `.storage` werden durch `.gitignore` ausgeschlossen.
+Die Lautstärke wird vom Gerät als ganzzahliger Bereich 0 bis 100 geliefert und in Home Assistant als 0.0 bis 1.0 dargestellt.
 
 ## Installation
 
-1. Repository klonen.
-2. `custom_components/kef_ls50_wireless` nach `/config/custom_components/kef_ls50_wireless` kopieren.
+1. Repository klonen oder herunterladen.
+2. Den Ordner `custom_components/kef_ls50_wireless` nach `/config/custom_components/kef_ls50_wireless` kopieren.
 3. Home Assistant neu starten.
-4. Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** nach **KEF LS50 Wireless** suchen.
-5. Hostname/IP des eigenen Lautsprechers eintragen.
+4. Zu **Einstellungen → Geräte & Dienste → Integration hinzufügen** gehen.
+5. Nach **KEF LS50 Wireless** suchen.
+6. Hostname oder IP-Adresse des eigenen Lautsprechers eingeben; der Standardport ist `8080`.
+
+## Lokale Architektur
+
+Das Gerät stellt sich als UPnP MediaRenderer bereit. Die Implementierung verwendet ausschließlich lokale HTTP/SOAP-Endpunkte:
+
+```text
+/description.xml
+/RenderingControl/ctrl
+/AVTransport/ctrl
+```
+
+Die verwendeten Services sind `RenderingControl:1` und `AVTransport:1`, jeweils mit `InstanceID` `0` und dem Kanal `Master` für Lautstärke/Mute.
 
 ## Debug-Logging
 
@@ -52,7 +50,9 @@ logger:
     custom_components.kef_ls50_wireless: debug
 ```
 
-Vor jedem öffentlichen Log-Auszug müssen lokale und geheime Werte entfernt werden.
+## Sicherheit
+
+Keine Mitschnitte, Zugangsdaten, Cookies, Tokens, privaten IP-Adressen, MAC-Adressen, Seriennummern oder Webhooks committen. `*.mitm`, `*.har`, `*.pcap*`, `.env`, `secrets.yaml` und `.storage` werden durch `.gitignore` ausgeschlossen.
 
 ## Lizenz
 

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from homeassistant.components.media_player import MediaPlayerEntity
+from homeassistant.components.media_player import MediaPlayerEntity, MediaPlayerState
 from homeassistant.components.media_player.const import MediaPlayerEntityFeature
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -31,7 +30,13 @@ class KefLs50WirelessMediaPlayer(
 
     _attr_has_entity_name = True
     _attr_name = None
-    _attr_supported_features = MediaPlayerEntityFeature(0)
+    _attr_supported_features = (
+        MediaPlayerEntityFeature.VOLUME_SET
+        | MediaPlayerEntityFeature.VOLUME_MUTE
+        | MediaPlayerEntityFeature.PLAY
+        | MediaPlayerEntityFeature.PAUSE
+        | MediaPlayerEntityFeature.STOP
+    )
 
     def __init__(
         self, coordinator: KefLs50WirelessCoordinator, entry: ConfigEntry[KefLs50WirelessCoordinator]
@@ -42,7 +47,7 @@ class KefLs50WirelessMediaPlayer(
         self._attr_unique_id = f"{DOMAIN}_{host.lower()}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, host.lower())},
-            name=f"KEF LS50 Wireless ({host})",
+            name="KEF LS50 Wireless",
             manufacturer="KEF",
             model="LS50 Wireless",
         )
@@ -50,24 +55,17 @@ class KefLs50WirelessMediaPlayer(
     @property
     def available(self) -> bool:
         """Return whether the speaker is available."""
-        return bool(self.coordinator.last_update_success and self.coordinator.data.get("available"))
+        return self.coordinator.last_update_success
 
     @property
-    def state(self) -> str:
-        """Return the current player state."""
-        if not self.available:
-            return STATE_UNAVAILABLE
-        return super().state
-
-    @property
-    def source(self) -> str | None:
-        """Return the active source."""
-        return self.coordinator.data.get("source")
-
-    @property
-    def source_list(self) -> list[str]:
-        """Return sources supplied by the device."""
-        return self.coordinator.data.get("source_list", [])
+    def state(self) -> MediaPlayerState:
+        """Return a Home Assistant state from UPnP transport state."""
+        transport_state = self.coordinator.data.get("transport_state")
+        if transport_state == "PLAYING":
+            return MediaPlayerState.PLAYING
+        if transport_state in {"PAUSED_PLAYBACK", "PAUSED_RECORDING"}:
+            return MediaPlayerState.PAUSED
+        return MediaPlayerState.IDLE
 
     @property
     def is_volume_muted(self) -> bool | None:
@@ -76,5 +74,30 @@ class KefLs50WirelessMediaPlayer(
 
     @property
     def volume_level(self) -> float | None:
-        """Return volume from zero to one."""
+        """Return volume normalized to Home Assistant's zero-to-one range."""
         return self.coordinator.data.get("volume_level")
+
+    async def async_set_volume_level(self, volume: float) -> None:
+        """Set volume level."""
+        await self.coordinator.client.async_set_volume(volume)
+        await self.coordinator.async_request_refresh()
+
+    async def async_mute_volume(self, mute: bool) -> None:
+        """Set mute state."""
+        await self.coordinator.client.async_set_mute(mute)
+        await self.coordinator.async_request_refresh()
+
+    async def async_media_play(self) -> None:
+        """Start playback."""
+        await self.coordinator.client.async_play()
+        await self.coordinator.async_request_refresh()
+
+    async def async_media_pause(self) -> None:
+        """Pause playback."""
+        await self.coordinator.client.async_pause()
+        await self.coordinator.async_request_refresh()
+
+    async def async_media_stop(self) -> None:
+        """Stop playback."""
+        await self.coordinator.client.async_stop()
+        await self.coordinator.async_request_refresh()

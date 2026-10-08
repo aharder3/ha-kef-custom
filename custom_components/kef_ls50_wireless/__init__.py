@@ -5,12 +5,13 @@ from __future__ import annotations
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import KefLs50WirelessApiClient
 from .const import CONF_HOST, CONF_PORT
 from .coordinator import KefLs50WirelessCoordinator
 
-PLATFORMS: list[Platform] = [Platform.MEDIA_PLAYER, Platform.SELECT]
+PLATFORMS: list[Platform] = [Platform.MEDIA_PLAYER]
 
 type KefLs50WirelessConfigEntry = ConfigEntry[KefLs50WirelessCoordinator]
 
@@ -20,6 +21,7 @@ async def async_setup_entry(
 ) -> bool:
     """Set up KEF LS50 Wireless from a config entry."""
     client = KefLs50WirelessApiClient(
+        session=async_get_clientsession(hass),
         host=entry.data[CONF_HOST],
         port=entry.data.get(CONF_PORT),
     )
