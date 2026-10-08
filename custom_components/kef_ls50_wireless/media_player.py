@@ -38,7 +38,8 @@ class KefLs50WirelessMediaPlayer(
     _attr_supported_features = (
         MediaPlayerEntityFeature.VOLUME_SET
         | MediaPlayerEntityFeature.VOLUME_MUTE
-        | MediaPlayerEntityFeature.PLAY_PAUSE
+        | MediaPlayerEntityFeature.PLAY
+        | MediaPlayerEntityFeature.PAUSE
         | MediaPlayerEntityFeature.SELECT_SOURCE
         | MediaPlayerEntityFeature.STOP
     )
@@ -108,6 +109,16 @@ class KefLs50WirelessMediaPlayer(
     async def async_select_source(self, source: str) -> None:
         """Select a speaker input."""
         await self.coordinator.async_select_source(source)
+        await self.coordinator.async_request_refresh()
+
+    async def async_media_play(self) -> None:
+        """Start or resume playback using the verified KEF TCP command."""
+        await self.coordinator.async_toggle_play_pause()
+        await self.coordinator.async_request_refresh()
+
+    async def async_media_pause(self) -> None:
+        """Pause playback using the verified KEF TCP command."""
+        await self.coordinator.async_toggle_play_pause()
         await self.coordinator.async_request_refresh()
 
     async def async_media_play_pause(self) -> None:
