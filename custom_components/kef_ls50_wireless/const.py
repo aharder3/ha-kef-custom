@@ -5,7 +5,9 @@ from typing import Final
 DOMAIN: Final = "kef_ls50_wireless"
 CONF_HOST: Final = "host"
 CONF_PORT: Final = "port"
+
 DEFAULT_PORT: Final = 8080
+KEF_CONTROL_PORT: Final = 50001
 DEFAULT_SCAN_INTERVAL_SECONDS: Final = 30
 
 PLATFORMS: Final = ["media_player"]
