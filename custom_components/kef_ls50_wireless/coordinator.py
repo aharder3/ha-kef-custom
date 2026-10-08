@@ -18,7 +18,6 @@ from homeassistant.helpers.update_coordinator import (
 
 from .api import KefLs50WirelessApiClient
 from .const import DEFAULT_SCAN_INTERVAL_SECONDS, DOMAIN
-from .kef_tcp import KefTcpControlClient
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,18 +51,16 @@ class KefLs50WirelessCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL_SECONDS),
         )
         self.client = client
-        self.tcp_client = KefTcpControlClient(client.host)
         self.kef_client = AsyncKefSpeaker(client.host)
 
     async def _async_update_data(self) -> dict[str, Any]:
-        """Read UPnP state, KEF TCP reachability, and active source."""
+        """Read UPnP state and active source through KEF TCP."""
         try:
-            state, tcp_available, kef_state = await asyncio.gather(
+            state, kef_state = await asyncio.gather(
                 self.client.async_get_status(),
-                self.tcp_client.async_check_available(),
                 self.kef_client.get_state(),
             )
-            state["tcp_control_available"] = tcp_available
+            state["tcp_control_available"] = True
             state["source"] = kef_state.source
             return state
         except Exception as err:
