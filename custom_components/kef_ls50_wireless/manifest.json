@@ -7,6 +7,13 @@
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/aharder3/ha-kef-custom/issues",
-  "requirements": [],
-  "version": "0.2.0"
+  "requirements": ["aiokef"],
+  "ssdp": [
+    {
+      "st": "urn:schemas-upnp-org:device:MediaRenderer:1",
+      "manufacturer": "KEF",
+      "modelName": "SP3903"
+    }
+  ],
+  "version": "0.4.0"
 }
