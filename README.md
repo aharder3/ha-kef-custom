@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="custom_components/kef_ls50_wireless/brand/logo.png" width="480" alt="KEF LS50 WIRELESS project logo">
+</p>
+
 # KEF LS50 Wireless for Home Assistant
 
 Eine lokale, datensparsame Home-Assistant-Custom-Integration für KEF LS50 Wireless Lautsprecher. Das Projekt verwendet die lokalen UPnP/SOAP- und KEF-TCP-Schnittstellen des Lautsprechers und benötigt kein KEF-Konto, keinen Cloud-Token und keine externe Internetverbindung.
